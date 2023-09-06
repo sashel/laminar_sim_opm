@@ -1,12 +1,9 @@
-function plot_wholebrain_roi_sim_results(subj_info, session_num, freq, snr, varargin)
+function plot_wholebrain_roi_sim_results(snr, varargin)
 % PLOT_WHOLEBRAIN_ROI_SIM_RESULTS  Plot free energy and t stastics for all
 % simulations
 %
 % Use as
-%   plot_wholebrain_roi_sim_results(subjects(1), 1, [10 30], -20)
-% where the first argument is the subject info structure (from create_subjects),
-% the second is the session number, the third is the frequency range, and
-% the fourth is the SNR (db).
+%   plot_wholebrain_roi_sim_results(-20), where the argument is the SNR (db).
 % 
 %   plot_wholebrain_roi_sim_results(...,'param','value','param','value'...) allows
 %    additional param/value pairs to be used. Allowed parameters:
@@ -17,74 +14,66 @@ function plot_wholebrain_roi_sim_results(subj_info, session_num, freq, snr, vara
 %    * sim_patch_size - 0 (default) or interger - simulated patch size
 %    * reconstruct_patch_size - 0 (default) or interger - reconstruction patch size
 
-% Parse inputs
-defaults = struct('nsims', 60, 'dipole_moment', 10, 'surf_dir', 'd:\pred_coding\surf',...
-    'sim_patch_size',0, 'reconstruct_patch_size',0);  %define default values
+% parse inputs
+addpath('/data/pt_02058/megdata/speech/analysis/software/brewermap')
+cm = colormap(brewermap(8, 'Set2'));
+
+defaults = struct('surf_dir', '/data/pt_user-helbling_ticket017439/helbling/NormativeMEG/Data/Freesurfer6.0.0_Recons/', 'mri_dir', '/data/pt_user-helbling_ticket017439/helbling/NormativeMEG/Data/hcT1s/AB300686/',...
+    'out_path', '', 'prefix', '', 'dipole_moment', 10, 'sim_patch_size', 0,...
+    'reconstruct_patch_size', 0, 'nsims', 60, 'recompute',true,'freq',[10 30]);  % define default values
+
 params = struct(varargin{:});
-for f = fieldnames(defaults)',
-    if ~isfield(params, f{1}),
+for f = fieldnames(defaults)'
+    if ~isfield(params, f{1})
         params.(f{1}) = defaults.(f{1});
     end
 end
 
-methodnames={'EBB','IID','COH','MSP'}; %% just 1 method for now
-Nmeth=length(methodnames);
-% Original and downsampled white matter surface
-orig_white_mesh=fullfile(params.surf_dir,...
-    sprintf('%s%s-synth', subj_info.subj_id, subj_info.birth_date),'surf',...
-    'white.hires.deformed.surf.gii');
-white_mesh=fullfile(params.surf_dir,...
-    sprintf('%s%s-synth', subj_info.subj_id, subj_info.birth_date),'surf',...
-    'ds_white.hires.deformed.surf.gii');
+if isempty(params.out_path)
+    params.out_path = '/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_35_axis_1';
+end
 
-% Original and downsampled pial surface
-orig_pial_mesh=fullfile(params.surf_dir,...
-    sprintf('%s%s-synth', subj_info.subj_id, subj_info.birth_date),'surf',...
-    'pial.hires.deformed.surf.gii');
-pial_mesh=fullfile(params.surf_dir,...
-    sprintf('%s%s-synth', subj_info.subj_id, subj_info.birth_date),'surf',...
-    'ds_pial.hires.deformed.surf.gii');
+methodnames={'EBB','MSP'}; % alternatively {'IID','COH'}
+method_picks = [1,2];
+Nmeth = length(method_picks);
+
+% define original and downsampled white matter surface
+orig_white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','white.hc_PDw2.surf.gii');
+white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2.surf.gii');
+
+orig_pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','pial.hc_PDw2.surf.gii');
+pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_pial.hc_PDw2.surf.gii');
 
 allmeshes=strvcat(white_mesh,pial_mesh);
 Nmesh=size(allmeshes,1);
 
 wholeBrainPialWhiteF=zeros(Nmeth,Nmesh,params.nsims);
-% Load free energy results
+% load free energy results
+freq = params.freq;
+
 if params.sim_patch_size==0 && params.reconstruct_patch_size==0
     fname=sprintf('allcrossF_f%d_%d_SNR%d_dipolemoment%d.mat',...
         freq(1),freq(2),snr,params.dipole_moment);
-    data_file=fullfile('D:\layer_sim\results\',subj_info.subj_id,...
-        num2str(session_num), fname);
+    data_file = fullfile(params.out_path, fname);
 else
     fname=sprintf('allcrossF_f%d_%d_SNR%d_dipolemoment%d_sim%d_reconstruct%d.mat',...
         freq(1),freq(2),snr,params.dipole_moment, params.sim_patch_size,...
         params.reconstruct_patch_size);
-    data_file=fullfile('D:\layer_sim\results\',subj_info.subj_id,...
-        num2str(session_num), fname);
-end
-load(data_file);
-
-for methind=1:Nmeth,       
-    for simmeshind=1:Nmesh,           
-        % F reconstructed on piwl - reconstructed on white
-        % num simulations x number of folds
-        pialF=squeeze(allcrossF(simmeshind,1:params.nsims,2,methind));
-        whiteF=squeeze(allcrossF(simmeshind,1:params.nsims,1,methind));
-        wholeBrainPialWhiteF(methind,simmeshind,:)=pialF-whiteF;
-    end
+    data_file = fullfile(params.out_path, fname);
 end
 
 roiWhitePialT=zeros(Nmeth,Nmesh*params.nsims);
-data_dir=fullfile('D:\layer_sim\ttest_results', subj_info.subj_id,...
-    num2str(session_num), sprintf('f%d_%d_SNR%d_dipolemoment%d', freq(1),...
+data_dir=fullfile(params.out_path, sprintf('f%d_%d_SNR%d_dipolemoment%d', freq(1),...
     freq(2), snr, params.dipole_moment));
-for methind=1:Nmeth,    
-    method=methodnames{methind};
-    roiWhitePialT(methind,:)=get_wmpial_t(data_dir, method, params.nsims, allmeshes(2,:), ...
-        allmeshes(1,:), orig_pial_mesh, orig_white_mesh, 'recompute_trials',false);
+
+for methind=1:Nmeth   
+    method=methodnames{method_picks(methind)};
+    roiWhitePialT(methind,:)=get_wmpial_t(data_dir, method, params.nsims, deblank(allmeshes(2,:)), ...
+        allmeshes(1,:), orig_pial_mesh, orig_white_mesh, 'recompute_trials',params.recompute,'delete_giftis',false);
 end
 
-figure('Position',[1 1 1000 1800]);
+figure('Position',[1 1 800 800]);
+
 mesh_idx=zeros(Nmeth,Nmesh);
 mesh_idx(1,1)=3;
 mesh_idx(1,2)=1;
@@ -94,28 +83,28 @@ mesh_idx(3,1)=11;
 mesh_idx(3,2)=9;
 mesh_idx(4,1)=15;
 mesh_idx(4,2)=13;
-for methind=1:Nmeth,       
-    for simmeshind=1:Nmesh,    
+for methind=1:Nmeth       
+    for simmeshind=1:Nmesh    
         subplot(Nmeth*Nmesh,2,mesh_idx(methind,simmeshind));
-        [path,file,ext]=fileparts(deblank(allmeshes(simmeshind,:)));
+        [~,file,~]=fileparts(deblank(allmeshes(simmeshind,:)));
         x=strsplit(file,'.');
         y=strsplit(x{1},'_');
         simmeshname=y{2};
         
         hold on
         for simind=1:params.nsims
-            color='b';
-            if wholeBrainPialWhiteF(methind,simmeshind,simind)<0
-                color='r';
+            color = cm(7,:);
+            if wholeBrainPialWhiteF(method_picks(methind),simmeshind,simind)<0
+                color = cm(2,:); 
             end
-            bar(simind,wholeBrainPialWhiteF(methind,simmeshind,simind),color,'EdgeColor','none');
+            bar(simind,wholeBrainPialWhiteF(method_picks(methind),simmeshind,simind),'FaceColor',color,'EdgeColor','none');
         end
-        plot([0 params.nsims+1],[3 3],'k--');
-        plot([0 params.nsims+1],[-3 -3],'k--');
         xlim([0 params.nsims+1]);
-        xlabel('Simulation')
-        ylabel('Free energy diff (pial-white)');
-        title(sprintf('Free energy, %s, %s',methodnames{methind},simmeshname));        
+        if (methind == Nmeth && simmeshind == Nmesh-1)
+            xlabel('Simulation')
+        end
+        ylabel('\Delta F');      
+        title(sprintf('%s - %s',methodnames{method_picks(methind)},simmeshname));        
     end
 
 end
@@ -130,16 +119,18 @@ mesh_idx(3,2)=10;
 mesh_idx(4,1)=16;
 mesh_idx(4,2)=14;
 
-dof=514;
+% dof=514;
+dof = 199;
 alpha=1.0-(0.05/2);
 t_thresh=tinv(alpha, dof);
 
 for methind=1:Nmeth,    
-    method=methodnames{methind};
+% for methind = method_picks,      
+    method = methodnames{methind};
     
     % For each simulated mesh
     for simmeshind=1:Nmesh,
-        [path,file,ext]=fileparts(allmeshes(simmeshind,:));
+        [~,file,~]=fileparts(allmeshes(simmeshind,:));
         x=strsplit(file,'.');
         y=strsplit(x{1},'_');
         simmeshname=y{2};
@@ -147,19 +138,23 @@ for methind=1:Nmeth,
         subplot(Nmeth*Nmesh,2,mesh_idx(methind,simmeshind));
         hold on
         for simind=1:params.nsims
-            color='b';
+            color = cm(7,:);
             if roiWhitePialT(methind,(simmeshind-1)*params.nsims+simind)<0
-                color='r';
+                color = cm(2,:);
             end
-            bar(simind,roiWhitePialT(methind,(simmeshind-1)*params.nsims+simind),color,'EdgeColor','none');
+            bar(simind,roiWhitePialT(methind,(simmeshind-1)*params.nsims+simind),'FaceColor',color,'EdgeColor','none');
         end
         hold on
-        plot([0 params.nsims+1], [t_thresh t_thresh],'k--');
-        plot([0 params.nsims+1], [-t_thresh -t_thresh],'k--');
+
         xlim([0 params.nsims+1]);
-        %ylim([-40 40]);
-        xlabel('Simulation')
-        ylabel('Mean t (pial-white)');
-        title(sprintf('t Stat, %s, %s',methodnames{methind},simmeshname)); 
+        if (methind == Nmeth && simmeshind == Nmesh-1)
+            xlabel('Simulation')
+        end
+        ylabel('ROI t-value');
+        title(sprintf('%s - %s',methodnames{methind},simmeshname)); 
+        
     end
 end
+set(gcf,'color','w')
+print(sprintf('%s/%s_SNR%d_results',params.out_path,params.prefix,snr),'-dpdf','-bestfit')
+save(sprintf('%s/%s_SNR%d_results',params.out_path,params.prefix,snr),'wholeBrainPialWhiteF','roiWhitePialT')
