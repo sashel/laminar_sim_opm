@@ -3,16 +3,16 @@ function tstat=compute_roi_t_stat(file_prefix, pial_meshname, wm_meshname,...
 % Compute the t-statistic for an ROI
 
 % Parse inputs
-defaults = struct('mapType', 'link', 'recompute', false, 'origPial', '',...
+defaults = struct('mapType', 'link', 'recompute', false, 'delete', false, 'origPial', '',...
     'origWhite', '', 'nsims', 60);  %define default values
 params = struct(varargin{:});
-for f = fieldnames(defaults)',
-    if ~isfield(params, f{1}),
+for f = fieldnames(defaults)'
+    if ~isfield(params, f{1})
         params.(f{1}) = defaults.(f{1});
     end
 end
 
-[filepath, filename, ext]=fileparts(file_prefix);
+[filepath, filename, ~]=fileparts(file_prefix);
 % Files containing t-statistics and pial-wm diff
 pial_t_filename=fullfile(filepath, sprintf('pial.%s.t.gii', filename));
 wm_t_filename=fullfile(filepath, sprintf('white.%s.t.gii', filename));
@@ -31,12 +31,12 @@ if exist(pial_t_filename,'file')~=2 || exist(wm_t_filename,'file')~=2 || exist(p
             
     % Run pial surface t-test
     varpop=nanvar([pial_diff.cdata(:,:) wm_diff.cdata(:,:)],[],2);
-    [tstat,pvals]=ttest_corrected(pial_diff.cdata(:,:)','correction',.01*max(varpop));
+    [tstat,~]=ttest_corrected(pial_diff.cdata(:,:)','correction',.01*max(varpop));
     pial_tvals=tstat';
     write_metric_gifti(pial_t_filename, pial_tvals);
     
     % Run wm surface t-test
-    [tstat,pvals]=ttest_corrected(wm_diff.cdata(:,:)','correction',.01*max(varpop));
+    [tstat,~]=ttest_corrected(wm_diff.cdata(:,:)','correction',.01*max(varpop));
     wm_tvals=tstat';
     write_metric_gifti(wm_t_filename, wm_tvals);
             
@@ -59,10 +59,30 @@ pial_mask=find(pial_tvals>pial_threshold & ~isinf(pial_tvals));
 wm_threshold=prctile(wm_tvals(~isinf(wm_tvals)),75);
 mapped_wm_tvals=wm_tvals(pial_white_map);
 mapped_wm_mask=find(mapped_wm_tvals>wm_threshold & ~isinf(mapped_wm_tvals));
+% lower threshold to 50th percentile if needed
+if isempty(mapped_wm_mask)
+    pial_threshold=prctile(pial_tvals(~isinf(pial_tvals)),50);
+    % Create pial and white masks and mapped white mask
+    pial_mask=find(pial_tvals>pial_threshold & ~isinf(pial_tvals));
+    wm_threshold=prctile(wm_tvals(~isinf(wm_tvals)),50);
+    mapped_wm_tvals=wm_tvals(pial_white_map);
+    mapped_wm_mask=find(mapped_wm_tvals>wm_threshold & ~isinf(mapped_wm_tvals));
+    sprintf('Lower threshold in file %s', filename)
+end
 mask=union(pial_mask, mapped_wm_mask);
         
 % Get mean pial-wm in ROI
 pial_wm_roi_diff=mean(pial_wm_diff(mask,:));
 % Perform ROI t-stat
-[tstat,p]=ttest_corrected(pial_wm_roi_diff','correction',1000*var(pial_wm_roi_diff));
+[tstat,~]=ttest_corrected(pial_wm_roi_diff','correction',1000*var(pial_wm_roi_diff));
 fprintf('ROI size=%d, tstat=%.2f\n',length(mask),tstat);
+
+if params.delete
+    if ~isempty(dir(fullfile(filepath, 'simprior*')))
+        rmdir(fullfile(filepath, 'simprior*'),'s')
+    end
+    delete(fullfile(filepath, sprintf('pial.%s.dat', filename)),fullfile(filepath, sprintf('white.%s.dat', filename)), fullfile(filepath, sprintf('pial-white.%s.dat', filename)))
+    delete(fullfile(filepath, sprintf('pial.%s.t.dat', filename)),fullfile(filepath, sprintf('white.%s.t.dat', filename)))
+    delete(fullfile(filepath, 'SPMgainmatrix*mesh*'))
+end
+
