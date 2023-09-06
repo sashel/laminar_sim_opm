@@ -1,4 +1,4 @@
-Laminar inferences using simulated OPM-MEG arrays
+Laminar inferences using OPM-MEG
 =======================
 
 Accompanying code for my simulation paper on laminar inferences with OPMs. 
