@@ -16,7 +16,7 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 > (bioRxiv link: https://www.biorxiv.org/content/early/2017/11/30/147215)
 
 > TM Tierney, S Mellor, GC O’Neill, N Holmes, E Boto, G Roberts, RM Hill, J Leggett, R Bowtell, MJ Brookes & GR Barnes<br> 
-> **Pragmatic spatial sampling for wearable MEG arrays**
+> **Pragmatic spatial sampling for wearable MEG arrays**<br> 
 > Scientific Reports (2020), https://www.nature.com/articles/s41598-020-77589-8
 
 ## Requirements
