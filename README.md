@@ -25,6 +25,7 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 * McNemarextest: http://www.mathworks.com/matlabcentral/fileexchange/6297
 * myBinomTest: https://uk.mathworks.com/matlabcentral/fileexchange/24813/
 * MEGSurfer: https://github.com/jbonaiuto/MEGsurfer
+* BrewerMap: https://github.com/DrosteEffect/BrewerMap
 
 ## Usage
 
