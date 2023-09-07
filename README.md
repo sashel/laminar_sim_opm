@@ -21,7 +21,7 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 
 ## Requirements
 
-* OPM tools: https://github.com/tierneytim/OPM/
+* OPM tools: https://github.com/sashel/OPM/ (forked from https://github.com/tierneytim/OPM/, contains the option to simulate multiple trials)
 * McNemarextest: http://www.mathworks.com/matlabcentral/fileexchange/6297
 * myBinomTest: https://uk.mathworks.com/matlabcentral/fileexchange/24813/
 * MEGSurfer: https://github.com/jbonaiuto/MEGsurfer
