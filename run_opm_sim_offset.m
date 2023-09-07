@@ -1,8 +1,8 @@
 function [] = run_opm_sim_offset(stem_dir, space, axis, SNRs, offsets)
-% RUN_OPM_SIM_OFFSET Run laminar simulations for an OPM array with SPACE
-% inter-sensor distance(s) and AXIS number of measurement axes across the
+% RUN_OPM_SIM_OFFSET Run laminar simulations for the data in project folder STEM_DIR, an OPM array 
+% with SPACE inter-sensor distance(s) and AXIS number of measurement axes across the
 % signal-to-noise ratios in SNRs for the scalp-sensor offsets specified in OFFSETS
-
+%
 % Use as run_opm_sim_offset('/data/pt_np-helbling/layer_opm_sim/',55,1,[-5,-10,-20,-30,-40],20)
 % where the first argument is the project folder, the second the inter-sensor distance in mm,
 % the third the number of measurement axes, the forth the SNRs and the
