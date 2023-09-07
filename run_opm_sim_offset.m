@@ -12,11 +12,11 @@ for i = space
     for j = axis
         for k = SNRs
             for m = offsets
-                simlayer_roi_opm_sim([10 30], SNRs(k),'rawfile',fullfile(stem_dir,sprintf('opm_sim_data/sim_opm_space_%d_axis_%d_offset_%d_ds.mat',space(i),axis(j),offsets(m))),...
+                simlayer_roi_opm_sim([10 30], SNRs(k),'rawfile',fullfile(stem_dir,sprintf('opm_sim_data/sim_opm_space_%d_axis_%d_offset_%d.mat',space(i),axis(j),offsets(m))),...
                     'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_offset_%d/',space(i),axis(j),offsets(m))))
                 fprintf('roi:/results_opm_sim_space_%d_axis_%d_offset_%d\n',space(i),axis(j),offsets(m))
 
-                simlayer_free_energy_opm_sim([10,30], SNRs(k),'rawfile',fullfile(stem_dir,sprintf('opm_sim_data/sim_opm_space_%d_axis_%d_offset_%d_ds.mat',space(i),axis(j),offset(m))),...
+                simlayer_free_energy_opm_sim([10,30], SNRs(k),'rawfile',fullfile(stem_dir,sprintf('opm_sim_data/sim_opm_space_%d_axis_%d_offset_%d.mat',space(i),axis(j),offset(m))),...
                     'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_offset_%d/',space(i),axis(j),offsets(m))))
                 fprintf('free:/results_opm_sim_space_%d_axis_%d_offset_%d\n',space(i),axis(j),offsets(m))
 
