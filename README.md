@@ -33,23 +33,10 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 
 % Create OPM-MEG arrays
 
-% Run simulations across sensor densities whole-brain and ROI-based analysis 
+% Run simulations across SNRs for whole-brain and ROI-based analysis 
 
-Uses: 
+    run_opm_sim(<PROJECT_FOLDER>,1,[-5,-10,-20,-30,-40])
 
-    simlayer_free_energy(subjects(1), 1, [10 30], -20);
-and
-    simlayer_roi(subjects(1), 1, [10 30], -20);
-
-
-% Run free energy - patch size simulations
-
-    simlayer_free_energy_patch_size(subjects(1), 1, [10 30], -20);
-
-
-% Run ROI - patch size simulations
-  
-    simlayer_roi_patch_size(subjects(1), 1, [10 30], -20);
 
 
 ### Analyzing results
