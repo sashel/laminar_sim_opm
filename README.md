@@ -29,20 +29,72 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 
 ## Usage
 
+### Construct the OPM-MEG arrays
+
+% Create OPM-MEG arrays across inter-sensor distances, number of measurement axes for a default scalp-sensor offset of 6.5 mm. Simulated data consists of 200 trials of 1 second each, sampled at a rate of 200/sec.
+
+    prepare_opm(<PROJECT_DIR>/DATA_DIR>)
+
+% Create OPM-MEG arrays across varying larger scalp-sensor offsets of 20, 30 and 40 mm at an inter-sensor distance of 35 mm and a single measurement axis.  
+
+    prepare_opm_offsets(<PROJECT_DIR>/DATA_DIR>)
+
 ### Running simulations
 
-% Create OPM-MEG arrays
+% Run simulations across SNRs for an OPM-MEG sensor array with an inter-sensor distance of 35 mm and one measurement axis using the whole-brain and ROI-based analyses 
 
-% Run simulations across SNRs for whole-brain and ROI-based analysis 
+    run_opm_sim(<PROJECT_FOLDER>,35,1,[-5,-10,-20,-30,-40,-50)
 
-    run_opm_sim(<PROJECT_FOLDER>,1,[-5,-10,-20,-30,-40])
+% Run simulations across inter-sensor distances 
 
+    run_opm_sim(<PROJECT_FOLDER>,[25 35 45 55],1,[-5,-10,-20,-30,-40])
 
+% Run simulations across number of measurement axes 
+
+    run_opm_sim(<PROJECT_FOLDER>,55,[1 2 3],[-5,-10,-20,-30,-40])
+
+% Run simulations across varying scalp-sensor offsets
+
+    run_opm_sim_offset(<PROJECT_FOLDER>,35,1,[-5,-10,-20,-30,-40],[20 30 40])
+
+% Run simulations across varying co-registration errors
+
+    run_opm_sim_offset_coreg(<PROJECT_FOLDER>,35,1,-10,[1 2 3 4])
+
+% TODO: add simulations for varying patch sizes & internal noise sources
 
 ### Analyzing results
 
 % Plot whole brain and ROI stats for each simulation
 
+% Plot classification accuracy and bias across SNRs (Fig.1)
+
+    plot_snr_classification_performance('correct',35,1)
+    plot_snr_classification_performance('pial',35,1)
+
+% Plot classification results across inter-sensor distances (Fig.2)
+
+    plot_space_classification_performance('correct',1)
+    plot_space_classification_performance('pial',1)
+
+% Plot classification results across number of measurement axes (Fig.3)
+
+    plot_axes_classification_performance('correct',35)
+    plot_axes_classification_performance('pial',35)
+
+% Plot classification results across scalp-sensor offsets (Fig. 4)
+
+    plot_offset_classification_performance('correct',55,1)
+    plot_offset_classification_performance('pial',55,1)
+
+% Plot classification results across co-registration errors (Fig. 5)
+
+    plot_coreg_classification_performance('correct',35)
+    plot_coreg_classification_performance('pial',35)
+
+% Plot classification results for congruent and incongruent patch sizes (Fig. 6)
+
+    plot_free_energy_patch_size_classification_performance()
 
 ## Support
 Email saskia.helbling@gmail.com with any questions.
