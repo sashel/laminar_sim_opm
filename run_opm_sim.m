@@ -3,7 +3,7 @@ function [] = run_opm_sim(stem_dir, space, axis, SNRs)
 % inter-sensor distance(s) and AXIS number of measurement axes across the
 % signal-to-noise ratios in SNRs
 
-% Use as run_opm_sim('/data/pt_np-helbling/layer_opm_sim/',1,[-5,-10,-20,-30,-40])
+% Use as run_opm_sim('/data/pt_np-helbling/layer_opm_sim/',35,1,[-5,-10,-20,-30,-40])
 % where the first argument is the project folder, the second the inter-sensor distance in mm,
 % the third the number of measurement axes and the forth the SNRs
 
