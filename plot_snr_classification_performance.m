@@ -34,11 +34,11 @@ alpha = 1.0-0.05/2;
 t_thresh = tinv(alpha, dof);
 
 methodnames = {'EBB','MSP'};
-orig_white_mesh = fullfile(params.surf_dir,'/AB-1mm-test/','surf','white.hc_PDw2.surf.gii');
-white_mesh = fullfile(params.surf_dir,'/AB-1mm-test/','surf','ds_white.hc_PDw2.surf.gii');
+orig_white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','white.hc_PDw2.surf.gii');
+white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2.surf.gii');
 
-orig_pial_mesh = fullfile(params.surf_dir,'/AB-1mm-test/','surf','pial.hc_PDw2.surf.gii');
-pial_mesh = fullfile(params.surf_dir,'/AB-1mm-test/','surf','ds_pial.hc_PDw2.surf.gii');
+orig_pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','pial.hc_PDw2.surf.gii');
+pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_pial.hc_PDw2.surf.gii');
 
 simmeshes = {white_mesh,pial_mesh};
 Nmesh = length(simmeshes);
