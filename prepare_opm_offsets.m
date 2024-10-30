@@ -1,5 +1,5 @@
 function [] = prepare_opm_offsets(data_dir)
-% use as prepare_opm('/data/pt_np-helbling/layer_opm_sim/opm_sim_data/')
+% use as prepare_opm_offsets('/data/pt_np-helbling/layer_opm_sim/opm_sim_data/')
 % data_dir = '/data/pt_np-helbling/layer_opm_sim/opm_sim_data/';
 % Add the right OPM toolbox! Careful, the developer's SPM version already
 % contains an OPM toolbox, but without the option for multiple trials
@@ -20,7 +20,9 @@ for i = 1:length(space)
             S.space = space(i);
             S.lead = 0;
             S.wholehead = 0;
-            S.offset = offsets(k);
+            S.offset = 20; % 6.5
+            chanpos_offset = D.sensors.meg.chanpos-D.sensors.meg.chanori.*(S.offset-6.5);
+            S.positions = [chanpos_offset, D.sensors.meg.chanori];            
             S.axis = axis(j);
             S.nTrials = 200;
             S.fs = 200;
