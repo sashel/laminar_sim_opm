@@ -1,9 +1,9 @@
-function simlayer_roi_BEM(SNR,re_run,varargin)
+function simlayer_roi_BEM(SNR,recompute_BEM,varargin)
 % SIMLAYER_ROI  Run simulations with ROI-based analysis
 % using a three-shell BEM
 %
 % Use as
-%   simlayer_roi_BEM(-20), where the first argument is the SNR (db)
+%   simlayer_roi_BEM(-20,0), where the first argument is the SNR (db)
 %   and the second argument indicates whether to recompute the BEM
 %
 %   simlayer_roi(...,'param','value','param','value'...) allows
@@ -12,15 +12,15 @@ function simlayer_roi_BEM(SNR,re_run,varargin)
 %    * mri_dir - directory containing subject MRIs
 %    * out_path - output file path (automatically generated if not
 %    specified)
-%    * dipole_moment - 10 (default) or interger - moment of simulated
+%    * dipole_moment - 10 (default) or integer - moment of simulated
 %    dipole
 %    * sim_patch_size - 5 (default) or interger - simulated patch size
-%    * reconstruct_patch_size - 5 (default) or interger - reconstruction patch size
+%    * reconstruct_patch_size - 5 (default) or integer - reconstruction patch size
 %    * invfoi - [10 30] (default) - frequency range for source inversion
 
 % Parse inputs
-defaults = struct('surf_dir', '/data/pt_user-helbling_ticket017439/helbling/NormativeMEG/Data/Freesurfer6.0.0_Recons/',...
-    'mri_dir', '/data/pt_user-helbling_ticket017439/helbling/NormativeMEG/Data/hcT1s/AB300686/',...
+defaults = struct('surf_dir', '<FS_DIR>'...
+    'mri_dir', '<T1_DIR>'...
     'rawfile', '', 'out_path', '', 'dipole_moment', 10, 'sim_patch_size', 5,...
     'reconstruct_patch_size', 5, 'nsims', 60, 'invfoi',[10 30],'npatch_factor',1.25);  % define default values
 
@@ -53,7 +53,7 @@ greyregfile = fullfile(params.out_path, 'opm_sim_greycoreg.mat');
 spm('defaults', 'EEG');
 spm_jobman('initcfg');
 
-if re_run == 1
+if recompute_BEM == 1||~exist(fullfile(params.out_path, 'SPMgainmatrix_opm_sim_greycoreg.mat')
     % copy file to foi_dir
     clear jobs
     matlabbatch = [];
@@ -139,10 +139,7 @@ ideal_Nmodes = [];
     matlabbatch{1}.spm.meeg.source.headmodel.forward.meg = 'OpenMEEG BEM';
     spm_jobman('run',matlabbatch);
     sprintf('Coreg done')
-
-copyfile(fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1_BEM/f10_30_SNR-5_dipolemoment10', 'backup_greycoreg_testmodes_temppatch/testmodes.mat'), fullfile(params.out_path, 'testmodes.mat'));
-copyfile(fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1_BEM/f10_30_SNR-5_dipolemoment10', 'backup_greycoreg_testmodes_temppatch/temppatch.mat'), fullfile(params.out_path, 'temppatch.mat'));
-  
+ 
 % Setup spatial modes for cross validation
 spatialmodesname = fullfile(params.out_path, 'testmodes.mat');
 if recompute_BEM
@@ -155,8 +152,6 @@ else
 end
 
 greycoreg = load(greyregfile);
-copyfile(fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1_BEM/f10_30_SNR-5_dipolemoment10', 'backup_greycoreg_testmodes_temppatch/SPMgainmatrix_opm_sim_greycoreg_1.mat'), fullfile(params.out_path, 'SPMgainmatrix_opm_sim_greycoreg_1.mat'));
-
 
 for simmeshind = 1:length(simmeshes)
     simmesh = simmeshes{simmeshind};
@@ -197,11 +192,7 @@ for simmeshind = 1:length(simmeshes)
         D.other.inv{1}.gainmat = 'SPMgainmatrix_opm_sim_1.mat';
 
         save(newfile,'D','-v7.3');
-        % if exist(fullfile(params.out_path, sprintf('SPMgainmatrix_%sopm_sim_1.mat',prefix)),'file')&&s==1
-        if s==1    
-            copyfile(fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1_BEM/f10_30_SNR-10_dipolemoment10', sprintf('backup_gainmatrices/SPMgainmatrix_%sopm_sim_1.mat',prefix)), fullfile(params.out_path, 'SPMgainmatrix_opm_sim_1.mat'));
-        end
-
+       
         % Simulate source
         matlabbatch = [];
         matlabbatch{1}.spm.meeg.source.simulate.D = {newfile};
@@ -244,7 +235,7 @@ for simmeshind = 1:length(simmeshes)
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.woi = invwoi;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.foi = params.invfoi;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.hanning = 0;
-            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedfile = {patchfilename}; %
+            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedfile = {patchfilename}; 
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedrows = [1 1];
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.patchfwhm =[-params.reconstruct_patch_size];
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.mselect = 0;
