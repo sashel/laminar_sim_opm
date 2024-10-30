@@ -5,9 +5,9 @@ function [] = run_opm_sim_BEM(stem_dir, space, axis, SNRs, recompute_BEM)
 % RECOMPUTE_BEM a logical flag indicating whether to recompute the BEM
 
 
-% Use as run_opm_sim_BEM('/data/pt_np-helbling/layer_opm_sim/',55,1,-10)
+% Use as run_opm_sim_BEM('/data/pt_np-helbling/layer_opm_sim/',55,1,-10,0)
 % where the first argument is the project folder, the second the inter-sensor distance in mm,
-% the third the number of measurement axes and the forth the SNRs
+% the third the number of measurement axes, the forth the SNRs in dB and the fifth the recompute flag
 
 for i = 1:length(space)
     for j = 1:length(axis)
