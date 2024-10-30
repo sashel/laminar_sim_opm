@@ -6,7 +6,7 @@ function simlayer_free_energy_BEM(SNR, recompute_BEM, varargin)
 %   simlayer_free_energy_BEM(-20,0), where the first argument is the SNR (db)
 %   and the second argument indicates whether to recompute the BEM
 %
-%   simlayer_free_energy(...,'param','value','param','value'...) allows
+%   simlayer_free_energy_BEM(...,'param','value','param','value'...) allows
 %    additional param/value pairs to be used. Allowed parameters:
 %    * surf_dir - directory containing subject surfaces
 %    * mri_dir - directory containing subject MRIs
@@ -23,8 +23,8 @@ function simlayer_free_energy_BEM(SNR, recompute_BEM, varargin)
 % Parse inputs
 defaults = struct('surf_dir','<FS_DIR>'...
     'mri_dir', '<T1_DIR>'...
-    'rawfile', '/data/pt_np-helbling/layer_opm_sim/opm_sim_data/sim_opm_space_35_axis_1.mat',...
-    'out_path', '/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_35_axis_1',...
+    'rawfile', '/data/pt_np-helbling/layer_opm_sim/opm_sim_data_BEM/sim_opm_custom_space_55_axis_1.mat',...
+    'out_path', '/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1_BEM',...
     'out_file', '', 'dipole_moment', 10, 'sim_patch_size', 5,...
     'reconstruct_patch_size', 5, 'nsims', 60, 'invfoi', [10 30]);  % define default values
 
@@ -116,7 +116,7 @@ for meshind = 1:Nmesh
     regfile = fullfile(params.out_path, sprintf('opm_sim_%dcoreg.mat',meshind)); % this is the regfile name
     regfiles{meshind} = regfile;
     clear jobs
-    if recompute_BEM
+    if recompute_BEM||~exist(fullfile(params.out_path, sprintf('SPMgainmatrix_opm_sim_%dcoreg.mat',meshind))        
         matlabbatch = [];
         matlabbatch{1}.spm.meeg.other.copy.D = {params.rawfile};
         matlabbatch{1}.spm.meeg.other.copy.outfile = regfile;
@@ -132,7 +132,7 @@ for meshind = 1:Nmesh
         matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.iskull = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1iskull_2562.surf.gii'};
         matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.oskull = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1oskull_2562.surf.gii'};
         matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.scalp = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1scalp_2562.surf.gii'};
-        matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 2;
+        matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 1;
         matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).fidname = 'nas';
         matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = fid(1,:);
         matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).fidname = 'lpa';
@@ -171,7 +171,7 @@ for simmeshind = 1:Nmesh % choose mesh to simulate on
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.iskull = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1iskull_2562.surf.gii'};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.oskull = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1oskull_2562.surf.gii'};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.scalp = {'/data/pt_np-helbling/layer_opm_sim/Sim_MEG_hcT1scalp_2562.surf.gii'};
-    matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 2;
+    matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 1;
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).fidname = 'nas';
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = fid(1,:);
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).fidname = 'lpa';
