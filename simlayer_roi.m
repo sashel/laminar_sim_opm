@@ -1,12 +1,9 @@
-function simlayer_roi( subj_info, session_num, invfoi, SNR, varargin )
+function simlayer_roi(SNR, varargin)
 % SIMLAYER_ROI  Run simulations with ROI analysis
 %
 % Use as
-%   simlayer_roi(subjects(1), 1, [10 30], -20)
-% where the first argument is the subject info structure (from create_subjects),
-% the second is the session number, the third is the frequency range, and
-% the fourth is the SNR (db).
-% 
+%   simlayer_roi(-20), where the argument is the SNR (db).
+%
 %   simlayer_roi(...,'param','value','param','value'...) allows
 %    additional param/value pairs to be used. Allowed parameters:
 %    * surf_dir - directory containing subject surfaces
@@ -17,192 +14,207 @@ function simlayer_roi( subj_info, session_num, invfoi, SNR, varargin )
 %    dipole
 %    * sim_patch_size - 5 (default) or interger - simulated patch size
 %    * reconstruct_patch_size - 5 (default) or interger - reconstruction patch size
+%    * invfoi - [10 30] (default) - frequency range for source inversion
 
-% Parse inputs
-defaults = struct('surf_dir', 'd:\pred_coding\surf', 'mri_dir', 'd:\pred_coding\mri',...
-    'out_path', '', 'dipole_moment', 10, 'sim_patch_size', 5,...
-    'reconstruct_patch_size', 5);  %define default values
+% parse inputs
+defaults = struct('surf_dir', '<FS_DIR>'...
+    'mri_dir', '<T1_DIR>'...
+    'rawfile', '', 'out_path', '', 'dipole_moment', 10, 'sim_patch_size', 5,...
+    'reconstruct_patch_size', 5, 'nsims', 60, 'npatch_factor',1.25, 'invfoi',[10 30]);  % define default values
+
 params = struct(varargin{:});
-for f = fieldnames(defaults)',
-    if ~isfield(params, f{1}),
+for f = fieldnames(defaults)'
+    if ~isfield(params, f{1})
         params.(f{1}) = defaults.(f{1});
     end
 end
 
-% Copy already-inverted file
-rawfile=fullfile('d:/pred_coding/analysis',subj_info.subj_id,...
-    num2str(session_num), 'grey_coreg\EBB\p0.4\instr\f15_30',...
-    sprintf('br%s_%d.mat',subj_info.subj_id,session_num));
-% Output directory
-if length(params.out_path)==0
-    params.out_path=fullfile('d:/layer_sim/ttest_results',subj_info.subj_id,...
-        num2str(session_num),sprintf('f%d_%d_SNR%d_dipolemoment%d',invfoi(1),...
-        invfoi(2),SNR,params.dipole_moment));
+fid = [-12.2234 124.8297 2.6319; -82.8018 19.6687 -47.1408; 72.7654 28.4151 -36.0353]; % fiducial locations
+
+if isempty(params.rawfile)
+    params.rawfile = '/data/pt_np-helbling/layer_opm_sim/opm_sim_data/sim_opm_custom_space_55_axis_1.mat';
 end
-if exist(params.out_path,'dir')~=7
+
+% output directory
+if isempty(params.out_path)
+    params.out_path = fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1',...
+        sprintf('f%d_%d_SNR%d_dipolemoment%d',invfoi(1),invfoi(2),SNR,params.dipole_moment));
+else
+    params.out_path = fullfile(params.out_path,...
+        sprintf('f%d_%d_SNR%d_dipolemoment%d',invfoi(1),invfoi(2),SNR,params.dipole_moment));
+end
+
+if exist(params.out_path,'dir')~= 7
     mkdir(params.out_path);
 end
-% New file to work with
-newfile=fullfile(params.out_path, sprintf('%s_%d.mat',subj_info.subj_id,session_num));
-greyregfile=fullfile(params.out_path, sprintf('%s_%d_greycoreg.mat',subj_info.subj_id,session_num));
+
+% file names for the new files to work with
+newfile = fullfile(params.out_path, 'opm_sim.mat');
+greyregfile = fullfile(params.out_path, 'opm_sim_greycoreg.mat');
 
 spm('defaults', 'EEG');
-spm_jobman('initcfg'); 
+spm_jobman('initcfg');
 
-% Copy file to foi_dir
+% make new files to work with
 clear jobs
-matlabbatch=[];
-matlabbatch{1}.spm.meeg.other.copy.D = {rawfile};
+matlabbatch = [];
+matlabbatch{1}.spm.meeg.other.copy.D = {params.rawfile};
 matlabbatch{1}.spm.meeg.other.copy.outfile = newfile;
 spm_jobman('run', matlabbatch);
 
-% Copy file to foi_dir
+% make new files to work with
 clear jobs
-matlabbatch=[];
-matlabbatch{1}.spm.meeg.other.copy.D = {rawfile};
+matlabbatch = [];
+matlabbatch{1}.spm.meeg.other.copy.D = {params.rawfile};
 matlabbatch{1}.spm.meeg.other.copy.outfile = greyregfile;
 spm_jobman('run', matlabbatch);
 
-% Load meshes
-white_mesh=fullfile(params.surf_dir,[subj_info.subj_id subj_info.birth_date '-synth'],'surf','ds_white.hires.deformed.surf.gii');
-pial_mesh=fullfile(params.surf_dir,[subj_info.subj_id subj_info.birth_date '-synth'],'surf','ds_pial.hires.deformed.surf.gii');
-pialwhite_mesh=fullfile(params.surf_dir,[subj_info.subj_id subj_info.birth_date '-synth'],'surf','ds_white.hires.deformed-ds_pial.hires.deformed.surf.gii');
-simmeshes={white_mesh,pial_mesh};
-allmeshes={white_mesh,pial_mesh,pialwhite_mesh};
+% load meshes
+white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2.surf.gii');
+pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_pial.hc_PDw2.surf.gii');
+combine_surfaces(white_mesh, pial_mesh,fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2-ds_pial.hc_PDw2.surf.gii'))
+pialwhite_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2-ds_pial.hc_PDw2.surf.gii');
 
-% Create smoothed meshes
-for meshind=1:length(allmeshes),
-    [smoothkern]=spm_eeg_smoothmesh_mm(allmeshes{meshind},params.sim_patch_size);
+white_mesh_gifti = gifti(white_mesh);
+write_surf_gifti(fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2.surf_gifti.gii'), white_mesh_gifti.vertices, white_mesh_gifti.faces);
+white_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_white.hc_PDw2.surf_gifti.gii');
+
+pial_mesh_gifti = gifti(pial_mesh);
+write_surf_gifti(fullfile(params.surf_dir,'/sub-01/','surf','ds_pial.hc_PDw2.surf_gifti.gii'), pial_mesh_gifti.vertices, pial_mesh_gifti.faces);
+pial_mesh = fullfile(params.surf_dir,'/sub-01/','surf','ds_pial.hc_PDw2.surf_gifti.gii');
+
+simmeshes = {white_mesh,pial_mesh};
+allmeshes = {white_mesh,pial_mesh,pialwhite_mesh};
+
+% create smoothed meshes
+for meshind = 1:length(allmeshes)
+    spm_eeg_smoothmesh_mm(allmeshes{meshind},params.sim_patch_size);
 end
-pial=gifti(pial_mesh);
-white=gifti(white_mesh);
 
-%% Setup simulation - number of sources, list of vertices to simulate on
-nverts=size(white.vertices,1);
-rng(0);
-simvertind=randperm(nverts); %% random list of vertex indices to simulate sources on
-Nsim=60; %% number of simulated sources on each surface
+% setup simulation - number of sources, list of vertices to simulate on
+white = gifti(white_mesh); % to get number of vertices
+nverts = size(white.vertices,1);
+rng(1,'twister')
+simvertind = randperm(nverts); % random list of vertex indices to simulate sources on
+Nsim = 60; % number of simulated sources on each surface
 
-%% for MSP  or GS or ARD
-% Number of patches as priors
-Npatch=Nsim*1.25;
-% so use all vertices that will be simulated on, on white/pial surface
-% (plus a few more) as MSP priors
-Ip=[simvertind(1:Npatch) nverts+simvertind(1:Npatch)];
-% Save priors
-patchfilename=fullfile(params.out_path, 'temppatch.mat');
+% for MSP
+Npatch = round(Nsim*params.npatch_factor);
+Ip = [simvertind(1:Npatch) nverts+simvertind(1:Npatch)];
+% save priors
+patchfilename = fullfile(params.out_path, 'temppatch.mat');
 save(patchfilename,'Ip');
+methodnames = {'EBB','MSP'};
+Nmeth = length(methodnames);
 
-methodnames={'EBB','IID','COH','MSP'};
-Nmeth=length(methodnames);
+% inversion parameters
+invwoi = [-500 500];
+simwoi = [100 500];
+baselinewoi = [-500 -100];
+% number of cross validation folds
+Nfolds = 1;
+% percentage of test channels in cross validation
+ideal_pctest = 0;
+% use all available spatial modes
+ideal_Nmodes = [];
 
-% Inversion parameters
-invwoi=[-500 500];
-simwoi=[100 500];
-baselinewoi=[-500 -100];
-% Number of cross validation folds
-Nfolds=1;
-% Percentage of test channels in cross validation
-ideal_pctest=0;
-% Use all available spatial modes
-ideal_Nmodes=[];
-
-% Coregister simulated dataset to combined pial/white mesh
-matlabbatch=[];
+% coregister simulated dataset to combined pial/white mesh
+matlabbatch = [];
 matlabbatch{1}.spm.meeg.source.headmodel.D = {greyregfile};
 matlabbatch{1}.spm.meeg.source.headmodel.val = 1;
 matlabbatch{1}.spm.meeg.source.headmodel.comment = '';
-matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.mri = {fullfile(params.mri_dir,[subj_info.subj_id subj_info.birth_date], [subj_info.headcast_t1 ',1'])};
+matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.mri = {fullfile(params.mri_dir,'Sim_MEG_hcT1.nii')};
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.cortex = {pialwhite_mesh};
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.iskull = {''};
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.oskull = {''};
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.scalp = {''};
 matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 2;
 matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).fidname = 'nas';
-matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = subj_info.nas;
+matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = fid(1,:);
 matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).fidname = 'lpa';
-matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).specification.type = subj_info.lpa;
+matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).specification.type = fid(2,:);
 matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).fidname = 'rpa';
-matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).specification.type = subj_info.rpa;
+matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).specification.type = fid(3,:);
 matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.useheadshape = 0;
 matlabbatch{1}.spm.meeg.source.headmodel.forward.eeg = 'EEG BEM';
 matlabbatch{1}.spm.meeg.source.headmodel.forward.meg = 'Single Shell';
 spm_jobman('run',matlabbatch);
-        
-% Setup spatial modes for cross validation
-spatialmodesname=fullfile(params.out_path, 'testmodes.mat');
-[spatialmodesname,Nmodes,pctest]=spm_eeg_inv_prep_modes_xval(greyregfile, ideal_Nmodes, spatialmodesname, Nfolds, ideal_pctest);
 
-greycoreg=load(greyregfile);
+% setup spatial modes for cross validation
+spatialmodesname = fullfile(params.out_path, 'testmodes.mat');
+[spatialmodesname,Nmodes,pctest] = spm_eeg_inv_prep_modes_xval(greyregfile, ideal_Nmodes, spatialmodesname, Nfolds, ideal_pctest);
 
-for simmeshind=1:length(simmeshes)
-    simmesh=simmeshes{simmeshind};
+greycoreg = load(greyregfile);
+
+for simmeshind = 1:length(simmeshes)
+    simmesh = simmeshes{simmeshind};
 
     % coregister to correct mesh
-    spm_jobman('initcfg'); 
-    matlabbatch=[];
+    spm_jobman('initcfg');
+    matlabbatch = [];
     matlabbatch{1}.spm.meeg.source.headmodel.D = {newfile};
     matlabbatch{1}.spm.meeg.source.headmodel.val = 1;
     matlabbatch{1}.spm.meeg.source.headmodel.comment = '';
-    matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.mri = {fullfile(params.mri_dir,[subj_info.subj_id subj_info.birth_date], [subj_info.headcast_t1 ',1'])};
+    matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.mri = {fullfile(params.mri_dir,'Sim_MEG_hcT1.nii')};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.cortex = {simmesh};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.iskull = {''};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.oskull = {''};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshes.custom.scalp = {''};
     matlabbatch{1}.spm.meeg.source.headmodel.meshing.meshres = 2;
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).fidname = 'nas';
-    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = subj_info.nas;
+    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(1).specification.type = fid(1,:);
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).fidname = 'lpa';
-    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).specification.type = subj_info.lpa;
+    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(2).specification.type = fid(2,:);
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).fidname = 'rpa';
-    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).specification.type = subj_info.rpa;
+    matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.fiducial(3).specification.type = fid(3,:);
     matlabbatch{1}.spm.meeg.source.headmodel.coregistration.coregspecify.useheadshape = 0;
     matlabbatch{1}.spm.meeg.source.headmodel.forward.eeg = 'EEG BEM';
     matlabbatch{1}.spm.meeg.source.headmodel.forward.meg = 'Single Shell';
     spm_jobman('run',matlabbatch);
-        
-    Dmesh=spm_eeg_load(newfile);
-    
-    %% now simulate sources on this mesh
-    sims=[1:Nsim];
-    for s=sims,
-        %% get location to simulate dipole on this mesh
-        simpos=Dmesh.inv{1}.mesh.tess_mni.vert(simvertind(s),:); 
 
-        prefix=sprintf('sim_mesh%d_source%d',simmeshind, s);
+    Dmesh = spm_eeg_load(newfile);
 
-        % Simulate source 
-        matlabbatch=[];
+    % now simulate sources on this mesh
+    for s = 1:Nsim
+        % get location to simulate dipole on this mesh
+        simpos = Dmesh.inv{1}.mesh.tess_mni.vert(simvertind(s),:);
+        prefix = sprintf('sim_mesh%d_source%d',simmeshind, s);
+
+        % simulate source
+        matlabbatch = [];
         matlabbatch{1}.spm.meeg.source.simulate.D = {newfile};
         matlabbatch{1}.spm.meeg.source.simulate.val = 1;
         matlabbatch{1}.spm.meeg.source.simulate.prefix = prefix;
         matlabbatch{1}.spm.meeg.source.simulate.whatconditions.all = 1;
         matlabbatch{1}.spm.meeg.source.simulate.isinversion.setsources.woi = simwoi;
         matlabbatch{1}.spm.meeg.source.simulate.isinversion.setsources.isSin.foi = mean(invfoi);
-        matlabbatch{1}.spm.meeg.source.simulate.isinversion.setsources.dipmom = [params.dipole_moment params.sim_patch_size];
+        matlabbatch{1}.spm.meeg.source.simulate.isinversion.setsources.dipmom = [params.dipole_moment, params.sim_patch_size];
         matlabbatch{1}.spm.meeg.source.simulate.isinversion.setsources.locs = simpos;
         if abs(params.dipole_moment)>0
-            matlabbatch{1}.spm.meeg.source.simulate.isSNR.setSNR = SNR;               
+            matlabbatch{1}.spm.meeg.source.simulate.isSNR.setSNR = SNR;
         else
             matlabbatch{1}.spm.meeg.source.simulate.isSNR.whitenoise = 100;
         end
-        [a,b]=spm_jobman('run', matlabbatch);
-        
-        % Copy forward model from pial/white coregistered file
-        simfilename=fullfile(params.out_path,sprintf('%s%s_%d.mat',prefix,subj_info.subj_id,session_num));
-        sim=load(simfilename);
-        sim.D.other=greycoreg.D.other;
-        D=sim.D;
-        copyfile(fullfile(params.out_path, sprintf('SPMgainmatrix_%s_%d_greycoreg_1.mat', subj_info.subj_id, session_num)), fullfile(params.out_path, sprintf('SPMgainmatrix_%s%s_%d_1.mat', prefix, subj_info.subj_id, session_num)));
-        D.other.inv{1}.gainmat=sprintf('SPMgainmatrix_%s%s_%d_1.mat', prefix, subj_info.subj_id, session_num);
+        spm_jobman('run', matlabbatch);
+
+
+        % copy forward model from pial/white coregistered file
+        simfilename = fullfile(params.out_path,sprintf('%sopm_sim.mat',prefix));
+        sim = load(simfilename);
+        sim.D.other = greycoreg.D.other;
+        sim.D.other.inv{1,1}.forward.loc = 0;
+
+        D = sim.D;
+        copyfile(fullfile(params.out_path, 'SPMgainmatrix_opm_sim_greycoreg_1.mat'), fullfile(params.out_path, sprintf('SPMgainmatrix_%sopm_sim_1.mat', prefix)));
+        D.other.inv{1}.gainmat = sprintf('SPMgainmatrix_%sopm_sim_1.mat', prefix);
         save(simfilename,'D');
 
-        % Resconstruct using each method
-        for methind=1:Nmeth,       
-            method=methodnames{methind};
-            
-            % Do inversion of simulated data with this surface
-            matlabbatch=[];
+        % reconstruct using each method
+        for methind = 1:Nmeth
+            method = methodnames{methind};
+
+            % do inversion of simulated data with this surface
+            matlabbatch = [];
             matlabbatch{1}.spm.meeg.source.invertiter.D = {simfilename};
             matlabbatch{1}.spm.meeg.source.invertiter.val = 1;
             matlabbatch{1}.spm.meeg.source.invertiter.whatconditions.all = 1;
@@ -211,37 +223,37 @@ for simmeshind=1:length(simmeshes)
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.woi = invwoi;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.foi = invfoi;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.hanning = 0;
-            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedfile = {patchfilename}; % '<UNDEFINED>';
-            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedrows = 1; %'<UNDEFINED>';
-            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.patchfwhm =[-params.reconstruct_patch_size]; %% NB A fiddle here- need to properly quantify
+            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedfile = {patchfilename};
+            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.isfixedpatch.fixedpatch.fixedrows = [1 1]; 
+            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.patchfwhm  = -params.reconstruct_patch_size; 
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.mselect = 0;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.nsmodes = Nmodes;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.umodes = {spatialmodesname};
-            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.ntmodes = [];
+            matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.ntmodes = 4;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.priors.priorsmask = {''};
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.priors.space = 1;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.restrict.locs = zeros(0, 3);
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.restrict.radius = 32;
             matlabbatch{1}.spm.meeg.source.invertiter.isstandard.custom.outinv = '';
             matlabbatch{1}.spm.meeg.source.invertiter.modality = {'All'};
-            matlabbatch{1}.spm.meeg.source.invertiter.crossval = [pctest Nfolds];   
+            matlabbatch{1}.spm.meeg.source.invertiter.crossval = [pctest Nfolds];
             spm_jobman('run',matlabbatch);
 
-            D=spm_eeg_load(simfilename);
-            goodchans=D.indchantype('MEGGRAD','good');
-            M=D.inv{1}.inverse.M;
-            U=D.inv{1}.inverse.U{1};
-            T=D.inv{1}.inverse.T;
+            D = spm_eeg_load(simfilename);
+            goodchans = D.indchantype('MEG','good');
+            M = D.inv{1}.inverse.M;
+            U = D.inv{1}.inverse.U{1};
+            T = D.inv{1}.inverse.T;
             It   = D.inv{1}.inverse.It;
-            times=D.inv{1}.inverse.pst;
-            Dgood=squeeze(D(goodchans,It,:));
-            ntrials=size(Dgood,3);
+            times  = D.inv{1}.inverse.pst;
+            Dgood = squeeze(D(goodchans,It,:));
+            ntrials = size(Dgood,3);
             m = export(gifti(D.inv{1}.mesh.tess_ctx),'patch');
             GL      = spm_mesh_smooth(m);
 
-            wois=[baselinewoi; simwoi];
-            for w=1:size(wois,1)
-                woi=wois(w,:);
+            wois = [baselinewoi; simwoi];
+            for w = 1:size(wois,1)
+                woi = wois(w,:);
 
                 fwhm = max(diff(woi),8);
                 t    = exp(-4*log(2)*(times(:) - mean(woi)).^2/(fwhm^2));
@@ -255,45 +267,44 @@ for simmeshind=1:length(simmeshes)
                     W = [W sin(f*wt) cos(f*wt)];
                 end
                 W  = diag(t)*W;
-                W  = spm_svd(W,1);  
+                W  = spm_svd(W,1);
                 TW     = T'*W;
                 TTW    = T*TW;
 
-                woi_vals=zeros(nverts*2,ntrials);
-                MU=M*U;
-                for i=1:ntrials
-                    MUd1=MU*squeeze(Dgood(:,:,i));
+                woi_vals = zeros(nverts*2,ntrials);
+                MU = M*U;
+                for i = 1:ntrials
+                    MUd1 = MU*squeeze(Dgood(:,:,i));
                     Y     = sum((MUd1*TTW).^2,2);
-                    woi_vals(:,i)=spm_mesh_smooth(GL,Y,8);       
+                    woi_vals(:,i) = spm_mesh_smooth(GL,Y,8);
                 end
 
-                woi_dir=fullfile(params.out_path, ['t' num2str(woi(1)) '_' num2str(woi(2))]);
-                if exist(woi_dir,'dir')~=7
+                woi_dir = fullfile(params.out_path, ['t' num2str(woi(1)) '_' num2str(woi(2))]);
+                if exist(woi_dir,'dir')~= 7
                     mkdir(woi_dir);
                 end
                 delete(fullfile(woi_dir,'*'));
-                out_filename=fullfile(woi_dir, sprintf('%s%s_%d_1_t%d_%d_f%d_%d', prefix, subj_info.subj_id, session_num, woi(1), woi(2), invfoi(1), invfoi(2)));
-                write_metric_gifti(out_filename,woi_vals);    
+                out_filename = fullfile(woi_dir, sprintf('%sopm_sim_1_t%d_%d_f%d_%d', prefix, woi(1), woi(2), invfoi(1), invfoi(2)));
+                write_metric_gifti(out_filename,woi_vals);
 
-                % Split pial and grey sources
+                % split pial and grey sources
                 split_inversion_results(woi_dir);
-
             end
-            
-            baseline_dir=fullfile(params.out_path, ['t' num2str(baselinewoi(1)) '_' num2str(baselinewoi(2))]);
-            woi_dir=fullfile(params.out_path, ['t' num2str(simwoi(1)) '_' num2str(simwoi(2))]);
-            
-            % Load all pial data from wois
-            pial_woi_trials=gifti(fullfile(woi_dir,sprintf('pial_%s%s_%d_1_t%d_%d_f%d_%d.gii', prefix, subj_info.subj_id, session_num, simwoi(1), simwoi(2), invfoi(1), invfoi(2))));
-            pial_baseline_trials=gifti(fullfile(baseline_dir,sprintf('pial_%s%s_%d_1_t%d_%d_f%d_%d.gii', prefix, subj_info.subj_id, session_num, baselinewoi(1), baselinewoi(2), invfoi(1), invfoi(2))));
 
-            % Load all white matter data from wois
-            white_woi_trials=gifti(fullfile(woi_dir,sprintf('white_%s%s_%d_1_t%d_%d_f%d_%d.gii', prefix, subj_info.subj_id, session_num, simwoi(1), simwoi(2), invfoi(1), invfoi(2))));
-            white_baseline_trials=gifti(fullfile(baseline_dir,sprintf('white_%s%s_%d_1_t%d_%d_f%d_%d.gii', prefix, subj_info.subj_id, session_num, baselinewoi(1), baselinewoi(2), invfoi(1), invfoi(2))));
+            baseline_dir = fullfile(params.out_path, ['t' num2str(baselinewoi(1)) '_' num2str(baselinewoi(2))]);
+            woi_dir = fullfile(params.out_path, ['t' num2str(simwoi(1)) '_' num2str(simwoi(2))]);
 
-            % Save pial diff
-            pial_diff=pial_woi_trials.cdata(:,:)-pial_baseline_trials.cdata(:,:);
-            white_diff=white_woi_trials.cdata(:,:)-white_baseline_trials.cdata(:,:);
+            % load all pial data from wois
+            pial_woi_trials = gifti(fullfile(woi_dir,sprintf('pial_%sopm_sim_1_t%d_%d_f%d_%d.gii', prefix, simwoi(1), simwoi(2), invfoi(1), invfoi(2))));
+            pial_baseline_trials = gifti(fullfile(baseline_dir,sprintf('pial_%sopm_sim_1_t%d_%d_f%d_%d.gii', prefix, baselinewoi(1), baselinewoi(2), invfoi(1), invfoi(2))));
+
+            % load all white matter data from wois
+            white_woi_trials = gifti(fullfile(woi_dir,sprintf('white_%sopm_sim_1_t%d_%d_f%d_%d.gii', prefix, simwoi(1), simwoi(2), invfoi(1), invfoi(2))));
+            white_baseline_trials = gifti(fullfile(baseline_dir,sprintf('white_%sopm_sim_1_t%d_%d_f%d_%d.gii', prefix,baselinewoi(1), baselinewoi(2), invfoi(1), invfoi(2))));
+
+            % save pial diff
+            pial_diff = pial_woi_trials.cdata(:,:)-pial_baseline_trials.cdata(:,:);
+            white_diff = white_woi_trials.cdata(:,:)-white_baseline_trials.cdata(:,:);
 
             write_metric_gifti(fullfile(params.out_path, sprintf('pial.%s.%s.gii',method,prefix)), pial_diff);
             write_metric_gifti(fullfile(params.out_path, sprintf('white.%s.%s.gii',method,prefix)), white_diff);
