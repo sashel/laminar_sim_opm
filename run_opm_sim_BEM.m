@@ -13,12 +13,12 @@ for i = 1:length(space)
     for j = 1:length(axis)
         for k = 1:length(SNRs)
             % run laminar simulations for the whole-brain free energy analysis
-            simlayer_free_energy_BEM(SNRs(k),recompute_BEM,'rawfile',fullfile(stem_dir,sprintf('opm_sim_data_spmdev/sim_opm_custom_space_%d_axis_%d_BEM.mat',space(i),axis(j))),...
+            simlayer_free_energy_BEM(SNRs(k),recompute_BEM,'rawfile',fullfile(stem_dir,sprintf('opm_sim_data_BEM/sim_opm_custom_space_%d_axis_%d_BEM.mat',space(i),axis(j))),...
                 'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_BEM/',space(i),axis(j))))
             fprintf('free:/results_opm_sim_space_%d_axis_%d_BEM\n',space(i),axis(j))
 
             % run laminar simulations for the t-statistic ROI analysis
-            simlayer_roi_BEM(SNRs(k),recompute_BEM,'rawfile',fullfile(stem_dir,sprintf('opm_sim_data_spmdev/sim_opm_custom_space_%d_axis_%d_BEM.mat',space(i),axis(j))),...
+            simlayer_roi_BEM(SNRs(k),recompute_BEM,'rawfile',fullfile(stem_dir,sprintf('opm_sim_data_BEM/sim_opm_custom_space_%d_axis_%d_BEM.mat',space(i),axis(j))),...
                 'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_BEM/',space(i),axis(j))))
             fprintf('roi:/results_opm_sim_space_%d_axis_%d_BEM\n',space(i),axis(j))
 
