@@ -179,7 +179,7 @@ for simmeshind = 1:Nmesh % choose mesh to simulate on
     matlabbatch{1}.spm.meeg.source.headmodel.forward.meg = 'Single Shell';
     spm_jobman('run', matlabbatch);
 
-    Dmesh = spm_eeg_load(filename);
+    Dmesh = spm_eeg_load(newfile);
 
     % now simulate sources on this mesh
     for s = 1:Nsim
