@@ -20,6 +20,7 @@ function simlayer_roi(SNR, varargin)
 defaults = struct('surf_dir', '<FS_DIR>'...
     'mri_dir', '<T1_DIR>'...
     'rawfile', '', 'out_path', '', 'dipole_moment', 10, 'sim_patch_size', 5,...
+    'out_path', '/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1',...
     'reconstruct_patch_size', 5, 'nsims', 60, 'npatch_factor',1.25, 'invfoi',[10 30]);  % define default values
 
 params = struct(varargin{:});
@@ -36,13 +37,8 @@ if isempty(params.rawfile)
 end
 
 % output directory
-if isempty(params.out_path)
-    params.out_path = fullfile('/data/pt_np-helbling/layer_opm_sim/results_opm_sim_space_55_axis_1',...
-        sprintf('f%d_%d_SNR%d_dipolemoment%d',invfoi(1),invfoi(2),SNR,params.dipole_moment));
-else
-    params.out_path = fullfile(params.out_path,...
-        sprintf('f%d_%d_SNR%d_dipolemoment%d',invfoi(1),invfoi(2),SNR,params.dipole_moment));
-end
+params.out_path = fullfile(params.out_path,...
+sprintf('f%d_%d_SNR%d_dipolemoment%d',params.invfoi(1),params.invfoi(2),SNR,params.dipole_moment));
 
 if exist(params.out_path,'dir')~= 7
     mkdir(params.out_path);
