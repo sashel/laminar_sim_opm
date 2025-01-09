@@ -32,7 +32,7 @@ and by Tim Tierney (https://github.com/tierneytim/OPM/) for OPM-MEG array simula
 
 ### Construct the OPM-MEG arrays
 
-Create OPM-MEG arrays across inter-sensor distances, number of measurement axes for a default scalp-sensor offset of 6.5 mm. Simulated data consists of 200 trials of 1 second each, sampled at a rate of 200/sec.
+Create OPM-MEG arrays across inter-sensor distances, number of measurement axes for a default scalp-sensor offset of 6.5 mm. Simulated data consists of 200 trials of 1 second each, sampled at a rate of 200/sec. The anonymised headcast MRI and head model surface meshes as well as a mid-cortical surface can be found in the data zip folder.
 
     prepare_opm(<PROJECT_DIR>/DATA_DIR>)
 
@@ -41,6 +41,8 @@ Create OPM-MEG arrays across varying larger scalp-sensor offsets of 20, 30 and 4
     prepare_opm_offsets(<PROJECT_DIR>/DATA_DIR>)
 
 ### Running simulations
+
+You will need the downsampled deep and superficial cortical surfaces in the data zip folder to run the simulations.
 
 Run simulations across SNRs for an OPM-MEG sensor array with an inter-sensor distance of 35 mm and one measurement axis using the whole-brain and ROI-based analyses 
 
