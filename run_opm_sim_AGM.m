@@ -23,7 +23,7 @@ for i = 1:length(space)
 
             fprintf('free:/results_opm_sim_space_%d_axis_%d_AGM\n',space(i),axis(j))
 
-            plot_wholebrain_roi_sim_results_sashel_ds11(SNRs(k),'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_AGM/',space(i),axis(j))),'prefix', sprintf('space_%d_axis_%d_ds',space(i),axis(j)),'recompute',true)
+            plot_wholebrain_roi_sim_results_ds11(SNRs(k),'out_path',fullfile(stem_dir,sprintf('/results_opm_sim_space_%d_axis_%d_AGM/',space(i),axis(j))),'prefix', sprintf('space_%d_axis_%d_ds',space(i),axis(j)),'recompute',true)
 
         end
     end
