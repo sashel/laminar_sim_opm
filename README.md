@@ -106,5 +106,7 @@ Plot classification results for congruent and incongruent patch sizes (Fig. 7)
 
     plot_free_energy_patch_size_classification_performance()
 
+Fig. 8 is automatically produced when running run_opm_sim_noise_sources, Fig. 9 re-use the plotting functions of Fig.2 and within the function add '_AGM' to the data_dir
+
 ## Support
 Email saskia.helbling@gmail.com with any questions.
