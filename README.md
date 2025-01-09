@@ -77,32 +77,32 @@ Run simulations with an Alternative Generative Model (AGM)
 
 ### Analyzing results
      
-Plot classification accuracy and bias across SNRs (Fig.1)
+Plot classification accuracy and bias across SNRs (Fig.2)
 
     plot_snr_classification_performance('correct',35,1)
     plot_snr_classification_performance('pial',35,1)
 
-Plot classification results across inter-sensor distances (Fig.2)
+Plot classification results across inter-sensor distances (Fig.3)
 
     plot_space_classification_performance('correct',1)
     plot_space_classification_performance('pial',1)
 
-Plot classification results across number of measurement axes (Fig.3)
+Plot classification results across number of measurement axes (Fig.4)
 
     plot_axes_classification_performance('correct',35)
     plot_axes_classification_performance('pial',35)
 
-Plot classification results across scalp-sensor offsets (Fig. 4)
+Plot classification results across scalp-sensor offsets (Fig. 5)
 
     plot_offset_classification_performance('correct',55,1)
     plot_offset_classification_performance('pial',55,1)
 
-Plot classification results across co-registration errors (Fig. 5)
+Plot classification results across co-registration errors (Fig. 6)
 
     plot_coreg_classification_performance('correct',35)
     plot_coreg_classification_performance('pial',35)
 
-Plot classification results for congruent and incongruent patch sizes (Fig. 6)
+Plot classification results for congruent and incongruent patch sizes (Fig. 7)
 
     plot_free_energy_patch_size_classification_performance()
 
